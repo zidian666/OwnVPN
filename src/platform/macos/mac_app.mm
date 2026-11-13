@@ -10,14 +10,17 @@
 using namespace ownvpn;
 namespace {
 NSString* Text(std::string_view text) {
-    return [[NSString alloc] initWithBytes:text.data() length:text.size() encoding:NSUTF8StringEncoding]
-               ?: @"";
+    auto value = [[NSString alloc] initWithBytes:text.data()
+                                          length:text.size()
+                                        encoding:NSUTF8StringEncoding];
+    return value ? value : @"";
 }
 NSString* Text(std::wstring_view text) {
     return Text(Utf8(text));
 }
 std::wstring WideText(NSString* text) {
-    return Wide(text.UTF8String ?: "");
+    auto value = text.UTF8String;
+    return Wide(value ? value : "");
 }
 fs::path Path(NSURL* url) {
     return url ? PathFromUtf8(url.fileSystemRepresentation) : fs::path{};
@@ -180,7 +183,7 @@ int64_t Now() {
     return NO;
 }
 - (void)message:(NSString*)message {
-    _notice.stringValue = message ?: @"操作失败";
+    _notice.stringValue = message ? message : @"操作失败";
 }
 - (std::optional<Profile>)selected {
     auto index = _profile.indexOfSelectedItem;
