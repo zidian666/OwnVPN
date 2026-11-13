@@ -24,7 +24,7 @@ build_directory="$project_root/build-macos-$architecture"
 umask 077
 cmake -S "$project_root" -B "$build_directory" \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
-    "-DCMAKE_OSX_ARCHITECTURES=$cmake_arch" \
+    "-DCMAKE_OSX_ARCHITECTURES=$cmake_arch" "-DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path)" \
     -DOWNVPN_BUILD_WINDOWS_APP=OFF -DOWNVPN_BUILD_MACOS_APP=ON -DBUILD_TESTING=ON
 cmake --build "$build_directory" --parallel 4
 ctest --test-dir "$build_directory" --output-on-failure
