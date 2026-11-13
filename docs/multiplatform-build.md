@@ -12,6 +12,8 @@ tests/support/           仅用于公共核心测试的隔离适配器
 
 以后增加 `src/platform/macos/` 或 `src/platform/android/` 及对应构建目标，继续使用同一个 `ownvpn_core`，平台功能成熟后合入主干。
 
+Android 开发机工具、NDK 编译检查及真机测试步骤见 [Android 开发与测试](android-development.md)。
+
 ## 公共核心
 
 - 配置解析、危险选项拒绝及分流策略。
