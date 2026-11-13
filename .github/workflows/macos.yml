@@ -1,0 +1,45 @@
+name: macOS
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/core/**'
+      - 'src/platform/macos/**'
+      - 'tests/**'
+      - 'tools/check_core_boundary.py'
+      - 'CMakeLists.txt'
+      - 'build-macos.sh'
+      - '.github/workflows/macos.yml'
+  pull_request:
+    paths:
+      - 'src/core/**'
+      - 'src/platform/macos/**'
+      - 'tests/**'
+      - 'CMakeLists.txt'
+      - 'build-macos.sh'
+      - '.github/workflows/macos.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26, macos-26-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Build and run offline tests
+        run: bash build-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OwnVPN-Mac-${{ runner.arch }}
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 7

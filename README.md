@@ -6,6 +6,8 @@ Windows 11 / x64 原生 C++ 桌面客户端。加载公司 `.ovpn`，使用用�
 
 Android 当前开发版为 `0.5.0-alpha.2`，在同一主干构建原生 Android 界面、VpnService 和官方 OpenVPN 3 客户端库，复用公共 C++ 核心。支持 ZIP 配置包导入和缺失依赖逐项选择。Windows 继续使用 0.4.0 的 OpenVPN 2.x 进程适配。Android 使用和验证范围见 [Android 开发与测试](docs/android-development.md)。
 
+macOS `0.6.0-alpha.1` 已开始开发：AppKit 界面、Keychain、系统加密、二维码、配置导入及本机构建入口位于同一主干。VPN 连接后台尚未接入，当前不是可连接的 Mac VPN 客户端。准备 Mac 后从 [Mac 开发入口](START_HERE_MAC.md) 继续。
+
 0.2.5 使用绿色底、白色字母 O 的应用图标，嵌入 16–256 像素多尺寸图标，同步用于程序文件、窗口、任务栏和主界面标识。矢量源文件为 `resources/app-icon.svg`，开发时可用 `tools/generate_app_icon.py`（Pillow）重新生成 ICO；运行程序无需 Python。
 
 ## 使用

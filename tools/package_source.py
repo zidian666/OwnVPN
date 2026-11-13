@@ -18,10 +18,10 @@ import zipfile
 
 ROOT_FILES = (
     ".clang-format", ".gitignore", ".gitattributes", "CMakeLists.txt", "build.ps1", "build-android.ps1", "README.md",
-    "THIRD_PARTY_NOTICES.txt", "START_HERE_MAC.md",
+    "THIRD_PARTY_NOTICES.txt", "START_HERE_MAC.md", "build-macos.sh", ".github/workflows/macos.yml",
 )
 SOURCE_ROOTS = ("src", "cmake", "docs", "resources", "tests", "tools", "android")
-TEXT_SUFFIXES = {".cpp", ".h", ".cmake", ".md", ".txt", ".py", ".ps1", ".rc", ".manifest", ".specs", ".svg", ".java", ".xml", ".gradle", ".properties"}
+TEXT_SUFFIXES = {".cpp", ".h", ".mm", ".in", ".sh", ".cmake", ".md", ".txt", ".py", ".ps1", ".rc", ".manifest", ".specs", ".svg", ".java", ".xml", ".gradle", ".properties"}
 PUBLIC_IMAGES = {
     "resources/app.ico", "resources/app-icon.png", "resources/app-connected.ico", "resources/app-icon-connected.png",
     "tests/fixtures/totp-standard.png", "tests/fixtures/totp-rotated.png",

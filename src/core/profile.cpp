@@ -284,7 +284,9 @@ static ParsedProfile ParseProfile(const fs::path& source, const fs::path& dest, 
             // Generated dependency names cannot escape the private profile folder.
             auto dst = dest / PathFromUtf8(op + ".bin");
             result.files.emplace(op, src);
-            result.config += op + ' ' + ConfigQuote(Utf8(dst.generic_wstring()));
+            auto path = dst.generic_u8string();
+            auto encoded = std::string_view(reinterpret_cast<const char*>(path.data()), path.size());
+            result.config += op + ' ' + ConfigQuote(encoded);
             if (t.size() == 3) {
                 result.config += ' ' + ConfigQuote(t[2]);
             }

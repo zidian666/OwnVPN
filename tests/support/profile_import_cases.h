@@ -61,5 +61,12 @@ template <class Check> void ProfileImportCases(const fs::path& root, Check check
     auto explicitFile = repository.Import(input, {}, {{"ca", ca}}, documents);
     check(ReadFile(explicitFile.config.parent_path() / "ca.bin") == ReadFile(ca),
           "explicit selection authorizes the particular external document");
+    auto localizedRoot = root / PathFromUtf8("配置目录");
+    fs::create_directories(localizedRoot);
+    ProfileRepository localized(localizedRoot / "managed");
+    auto unicodeProfile = localized.Import(input, {}, {{"ca", ca}}, documents);
+    localized.Validate(unicodeProfile);
+    check(ReadFile(unicodeProfile.config).find("配置目录") != std::string::npos,
+          "managed dependency paths use UTF8 independently of the filesystem locale");
 }
 } // namespace ownvpn::testing

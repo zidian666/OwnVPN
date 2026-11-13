@@ -28,4 +28,8 @@ auto-reconnect.enabled
 *.aab
 *.jks
 *.keystore
+*.dmg
+*.app/
+*.dSYM/
+.DS_Store
 

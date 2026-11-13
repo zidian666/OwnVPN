@@ -2,17 +2,18 @@
 
 ## 0.4.0 的目标和范围
 
-同一份仓库按目标平台选择实现，不长期维护三套平台分支。Windows 0.4.0 完成公共核心剥离和 Windows 适配；Android 0.5.0-alpha.1 在同一主干新增原生界面、平台适配、VPN 隧道和 APK 构建。macOS 尚未实现。
+同一份仓库按目标平台选择实现，不长期维护三套平台分支。Windows 0.4.0 完成公共核心剥离和 Windows 适配；Android 0.5.0-alpha.2 提供原生界面、平台适配、VPN 隧道和 APK 构建。macOS 0.6.0-alpha.1 已加入 AppKit 界面、平台能力和构建入口，VPN 连接后台尚未接入，见 [Mac 开发](macos-development.md)。
 
 ```text
 src/core/                 公共 C++20 逻辑和平台接口
 src/platform/windows/    Win32 界面、连接服务及 Windows 能力实现
 src/platform/android/    JNI、Android 平台能力及 OpenVPN 3 原生适配
+src/platform/macos/      AppKit、Keychain、系统加密、DNS、二维码及配置导入
 android/                 Android 原生界面、VpnService 和 Gradle 工程
 tests/support/           仅用于公共核心测试的隔离适配器
 ```
 
-Android 的 Gradle 工程通过 NDK/CMake 编译同一个 `ownvpn_core`。以后接入 macOS 继续增加平台实现，不复制公共核心或建立永久的平台分支。
+Android 的 Gradle 工程通过 NDK/CMake 编译同一个 `ownvpn_core`。macOS 的 CMake/AppKit 目标也链接该核心，不复制业务或建立永久的平台分支。
 
 Android 开发机工具、NDK 编译检查及真机测试步骤见 [Android 开发与测试](android-development.md)。
 
