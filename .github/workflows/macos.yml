@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/core/**'
       - 'src/platform/macos/**'
+      - 'cmake/MacDependencies.cmake'
       - 'tests/**'
       - 'tools/check_core_boundary.py'
       - 'CMakeLists.txt'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'src/core/**'
       - 'src/platform/macos/**'
+      - 'cmake/MacDependencies.cmake'
       - 'tests/**'
       - 'CMakeLists.txt'
       - 'build-macos.sh'

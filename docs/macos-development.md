@@ -31,6 +31,8 @@ bash build-macos.sh --arch universal
 
 需要 macOS、CMake 和当前 Apple SDK/C++20 工具链，最低部署目标为 macOS 15。脚本不下载公司资料、不请求 root、不更改 VPN。构建、CTest、ad-hoc 签名验证通过后，输出 `dist/OwnVPN-Mac-0.6.0-alpha.1-<架构>.app`、ZIP 和 SHA-256。为避免覆盖已有产物，重复发布前先移动上一份输出。
 
+ZIP 读取静态链接固定的 libarchive 3.8.11 官方源码，下载时校验 SHA-256，只使用系统 zlib，不依赖另一台机器的 Homebrew 动态库。固定值见 `cmake/MacDependencies.cmake`，上游 COPYING 随应用放在 `Contents/Resources/licenses`，组件说明见 [第三方声明](macos-third-party-notices.txt)。
+
 `macos_platform_tests` 包含 18 组 RFC6238 向量、SHA256、随机源、私有目录、配置依赖、ZIP 清理及路径边界、IP/取消、Vision QR 样本。默认不读写用户 Keychain，不解析真实域名，不发起 VPN。显式运行以下命令会在随机命名的测试服务内写入公开合成样本，再删除该条目：
 
 ```bash

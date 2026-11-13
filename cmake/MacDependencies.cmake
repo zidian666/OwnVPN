@@ -1,0 +1,31 @@
+# Standalone app: build a pinned static ZIP reader instead of linking an
+# unbundled Homebrew dylib or relying on SDK-private archive headers.
+set(OWNVPN_ARCHIVE_VERSION 3.8.11)
+set(OWNVPN_ARCHIVE_SHA256 6e9560b2e0659ff688c5efb7717a68bb06b28ef65a69addcd6c424eaf9c319b1)
+set(OWNVPN_ARCHIVE_SOURCE "${CMAKE_BINARY_DIR}/_deps/libarchive-${OWNVPN_ARCHIVE_VERSION}")
+set(OWNVPN_ARCHIVE_DOWNLOAD "${CMAKE_BINARY_DIR}/downloads/libarchive-v${OWNVPN_ARCHIVE_VERSION}.tar.gz")
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/downloads")
+if(NOT EXISTS "${OWNVPN_ARCHIVE_DOWNLOAD}")
+  file(DOWNLOAD "https://codeload.github.com/libarchive/libarchive/tar.gz/refs/tags/v${OWNVPN_ARCHIVE_VERSION}"
+    "${OWNVPN_ARCHIVE_DOWNLOAD}" EXPECTED_HASH "SHA256=${OWNVPN_ARCHIVE_SHA256}" TLS_VERIFY ON)
+endif()
+file(SHA256 "${OWNVPN_ARCHIVE_DOWNLOAD}" actual_hash)
+if(NOT actual_hash STREQUAL OWNVPN_ARCHIVE_SHA256)
+  message(FATAL_ERROR "libarchive source checksum mismatch")
+endif()
+if(NOT EXISTS "${OWNVPN_ARCHIVE_SOURCE}/CMakeLists.txt")
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_deps")
+  file(ARCHIVE_EXTRACT INPUT "${OWNVPN_ARCHIVE_DOWNLOAD}" DESTINATION "${CMAKE_BINARY_DIR}/_deps")
+endif()
+function(ownvpn_add_archive)
+  set(BUILD_SHARED_LIBS OFF)
+  foreach(feature WERROR MBEDTLS NETTLE OPENSSL MD LIBB2 LZ4 LZO LZMA ZSTD BZip2
+      LIBXML2 BSDXML EXPAT WIN32_XMLLITE PCREPOSIX PCRE2POSIX LIBGCC CNG
+      TAR CPIO CAT UNZIP XATTR ACL TEST COVERAGE INSTALL CLANG_TIDY)
+    set(ENABLE_${feature} OFF CACHE BOOL "Only local ZIP import is needed" FORCE)
+  endforeach()
+  set(ENABLE_ZLIB ON CACHE BOOL "Read deflated ZIP entries" FORCE)
+  find_package(ZLIB REQUIRED)
+  add_subdirectory("${OWNVPN_ARCHIVE_SOURCE}" "${CMAKE_BINARY_DIR}/libarchive" EXCLUDE_FROM_ALL)
+endfunction()
+ownvpn_add_archive()

@@ -1,0 +1,13 @@
+OwnVPN Mac 0.6.0-alpha.1 development foundation
+
+libarchive 3.8.11, unmodified upstream source.
+Source: https://github.com/libarchive/libarchive/tree/v3.8.11
+Archive SHA-256: 6e9560b2e0659ff688c5efb7717a68bb06b28ef65a69addcd6c424eaf9c319b1
+Copyright Tim Kientzle and contributors.
+Individual files carry BSD and other permissive notices; the complete upstream
+COPYING notice is included alongside this file in Resources/licenses.
+The ZIP reader is linked statically; CLI tools and external crypto libraries
+are not bundled. Deflate uses the macOS system zlib.
+
+CommonCrypto, Security/Keychain, AppKit, Foundation, Vision, ImageIO, DNSService
+and zlib are provided by macOS. No OpenVPN engine is bundled in this foundation.
