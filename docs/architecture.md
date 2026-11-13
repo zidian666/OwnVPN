@@ -1,5 +1,7 @@
 # 模块边界与扩展约定
 
+0.4.0 已将公共实现移至 `src/core/`，Windows 实现移至 `src/platform/windows/`。现行接口、构建方式和后续平台接入规则见 [多平台构建](multiplatform-build.md)。下文中 Windows 生命周期规则继续适用于 Windows 适配器。
+
 ## 依赖方向
 
 ```mermaid

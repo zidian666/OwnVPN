@@ -201,10 +201,13 @@ void ReuseSession(const std::wstring& scenario) {
             request.password = "synthetic-password";
             request.otp = "123456";
             request.dnsFallback = attempt % 2 != 0;
-            Check(controller.Start(nullptr, std::move(request)), "start or reuse session");
+            IConnectionBackend& backend = controller;
+            Check(attempt % 2 ? backend.Start(std::move(request))
+                              : controller.Start(nullptr, std::move(request)),
+                  "start or reuse session through portable and Windows interfaces");
             Check(WaitForSingleObject(ready.value, 2000) == WAIT_OBJECT_0, "reused host accepts new request");
             if (!(scenario == L"retry-error" && attempt == 0)) {
-                controller.Stop();
+                backend.Stop();
             }
             Check(WaitForSingleObject(stopped.value, 2500) == WAIT_OBJECT_0, "reused host finishes attempt");
             Check(!controller.active() && controller.authorized(), "authorization survives disconnect");

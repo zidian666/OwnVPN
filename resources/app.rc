@@ -4,8 +4,8 @@ IDI_OWNVPN ICON "app.ico"
 IDI_OWNVPN_CONNECTED ICON "app-connected.ico"
 1 RT_MANIFEST "app.manifest"
 1 VERSIONINFO
- FILEVERSION 0,3,9,0
- PRODUCTVERSION 0,3,9,0
+ FILEVERSION 0,4,0,0
+ PRODUCTVERSION 0,4,0,0
  FILEFLAGSMASK 0x3fL
  FILEOS VOS_NT_WINDOWS32
  FILETYPE VFT_APP
@@ -16,7 +16,7 @@ BEGIN
   BEGIN
    VALUE "FileDescription", "OwnVPN - Private network client\0"
    VALUE "ProductName", "OwnVPN\0"
-   VALUE "ProductVersion", "0.3.9\0"
+   VALUE "ProductVersion", "0.4.0\0"
   END
  END
  BLOCK "VarFileInfo" BEGIN VALUE "Translation", 0x409, 1200 END

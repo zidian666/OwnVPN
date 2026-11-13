@@ -8,7 +8,7 @@ $versionMatch = [regex]::Match($projectConfiguration, 'project\(\s*OwnVPN\s+VERS
 if (-not $versionMatch.Success) { throw 'Cannot determine release version from CMakeLists.txt' }
 $releaseVersion = $versionMatch.Groups[1].Value
 $releaseFileName = "OwnVPN-$releaseVersion.exe"
-& cmake -S $projectRoot -B "$projectRoot\build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+& cmake -S $projectRoot -B "$projectRoot\build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DOWNVPN_BUILD_WINDOWS_APP=ON
 if ($LASTEXITCODE -ne 0) { throw 'CMake configuration failed' }
 & cmake --build "$projectRoot\build"
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }

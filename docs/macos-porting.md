@@ -1,5 +1,7 @@
 # macOS 迁移技术交接
 
+当前仓库已升级至 0.4.0 架构：先阅读 [同一主干的多平台构建](multiplatform-build.md)，复用 `src/core/` 并为 `Platform()` 和 `IConnectionBackend` 提供 macOS 实现。以下内容是 0.2.7 历史交接包的说明，其中“公共头文件引入 Windows API”等旧拆分任务已在 0.4.0 处理，不应重新复制一套业务代码。
+
 ## 当前基线与包的边界
 
 - 交接基线为 OwnVPN 0.2.7，C++20、Win32 原生界面、CMake；Windows 使用已安装的官方 OpenVPN 2.x 可执行文件及管理接口。它没有链接 OpenVPN GUI 的库，也不控制官方 GUI 的窗口。Windows 上曾检查到 OpenVPN 2.7.8；这不是 Mac 上必须照搬的安装版本。
