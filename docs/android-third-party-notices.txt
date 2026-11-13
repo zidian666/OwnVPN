@@ -1,4 +1,4 @@
-OwnVPN Android 0.5.0-alpha.1
+OwnVPN Android 0.5.0-alpha.2
 
 OpenVPN 3 Core 3.11.8, commit 4f3bdef73245d4ee9e8216c5d65baccc9568f6ef
 Copyright OpenVPN Inc. and contributors. Used under Mozilla Public License 2.0.

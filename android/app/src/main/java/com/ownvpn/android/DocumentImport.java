@@ -13,29 +13,11 @@ final class DocumentImport {
         }
         return "profile.ovpn";
     }
-    static File copy(Context context, Uri uri, String filename) throws IOException {
-        File dir = new File(context.getCacheDir(), "import");
-        if (!dir.exists() && !dir.mkdir())
-            throw new IOException("无法创建导入目录");
-        String name = new File(filename).getName();
-        if (name.isEmpty() || name.equals(".") || name.equals(".."))
-            throw new IOException("文件名无效");
-        File target = new File(dir, name);
-        try (InputStream input = context.getContentResolver().openInputStream(uri);
-             OutputStream output = new FileOutputStream(target)) {
-            if (input == null)
-                throw new IOException("无法读取文件");
-            byte[] buffer = new byte[8192];
-            int read;
-            long total = 0;
-            while ((read = input.read(buffer)) != -1) {
-                total += read;
-                if (total > 16 * 1024 * 1024)
-                    throw new IOException("配置文件过大");
-                output.write(buffer, 0, read);
-            }
-        }
-        return target;
+    static InputStream open(Context context, Uri uri) throws IOException {
+        InputStream input = context.getContentResolver().openInputStream(uri);
+        if (input == null)
+            throw new IOException("无法读取文件");
+        return input;
     }
     static String qr(Context context, Uri uri) throws IOException {
         BitmapFactory.Options options = new BitmapFactory.Options();

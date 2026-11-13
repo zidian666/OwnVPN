@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public final class MainActivity extends Activity {
-    private static final int OVPN = 10, PEM = 11, QR = 12, VPN = 13;
+    private static final int OVPN = 10, PEM = 11, QR = 12, VPN = 13, DEPENDENCY = 14;
     static final int CONNECT_ID = R.id.connect, USER_ID = R.id.username, PASSWORD_ID = R.id.password,
                      OTP_ID = R.id.otp;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -32,7 +32,9 @@ public final class MainActivity extends Activity {
     private CheckBox remember, automatic, reconnect, fallback;
     private TextView status, ip, mark, remaining, diagnostics;
     private Button connect, importButton;
-    private Uri pendingOvpn;
+    private ImportWorkspace importing;
+    private MissingDependencyException missingDependency;
+    private boolean importBusy;
     private String bindingProfile, bindingUser;
     private OwnVpnService.Request pendingRequest;
     private long nextPreview;
@@ -126,8 +128,6 @@ public final class MainActivity extends Activity {
     public void onCreate(Bundle state) {
         super.onCreate(state);
         preferences = getSharedPreferences("ui", MODE_PRIVATE);
-        if (state != null && state.getString("pendingOvpn") != null)
-            pendingOvpn = Uri.parse(state.getString("pendingOvpn"));
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(0xfff7f8f6);
@@ -255,7 +255,8 @@ public final class MainActivity extends Activity {
         diagnostics.setVisibility(View.GONE);
         add(diagnostics);
         TextView usage = text(
-            "1 从邮件下载 users.pem，并解压配置包获得 .ovpn\n2 导入 .ovpn，随后选择 users.pem\n3 从 "
+            "1 从邮件下载 users.pem 和原始 ZIP 配置包\n2 导入 ZIP，选择配置后再选择 users.pem。单独导入 " +
+            ".ovpn 时，按提示补齐包内的 .key 和 .crt 文件\n3 从 "
                 + "https://y2m.knownsec.com/auth/otp/login 获取二维码\n4 "
                 + "填写账号并导入二维码，勾选自动生成\n5 选择自动重连，连接 VPN\n\n首次使用公司 Wi-Fi 若 "
                 + "DNS 解析失败，请先通过其他网络成功连接，保存 IP 后再切回公司 Wi-Fi。",
@@ -267,7 +268,7 @@ public final class MainActivity extends Activity {
                  () -> usage.setVisibility(usage.getVisibility() == View.GONE ? View.VISIBLE : View.GONE)));
         add(usage);
         space(10);
-        TextView version = text("0.5.0-alpha.1", 11);
+        TextView version = text("0.5.0-alpha.2", 11);
         version.setTextColor(0xff8b938d);
         version.setTooltipText("查看开源许可");
         version.setOnClickListener(v -> licenses());
@@ -344,7 +345,7 @@ public final class MainActivity extends Activity {
         connect.setEnabled(service != null && (state == null || !"STOPPING".equals(state.state)));
         setText(connect, preparing ? "取消连接" : active ? "断开连接" : "连接 VPN");
         profiles.setEnabled(!active);
-        importButton.setEnabled(!active);
+        importButton.setEnabled(!active && !importBusy);
         username.setEnabled(!active);
         password.setEnabled(!active);
         automatic.setEnabled(!active);
@@ -499,30 +500,150 @@ public final class MainActivity extends Activity {
             }
         });
     }
-    private void importFiles(Uri pem) {
-        Uri config = pendingOvpn;
-        pendingOvpn = null;
-        if (config == null)
+    private void closeImport() {
+        ImportWorkspace old = importing;
+        importing = null;
+        missingDependency = null;
+        importBusy = false;
+        if (old != null)
+            io.execute(() -> {
+                try {
+                    old.close();
+                } catch (java.io.IOException ignored) {
+                }
+            });
+    }
+    private void importError(Exception error) {
+        main.post(() -> {
+            if (isDestroyed())
+                return;
+            closeImport();
+            message(error.getMessage());
+        });
+    }
+    private void prepareImport(Uri uri, String name) {
+        closeImport();
+        importBusy = true;
+        refresh();
+        io.execute(() -> {
+            ImportWorkspace workspace = null;
+            try {
+                workspace = new ImportWorkspace(getCacheDir());
+                try (java.io.InputStream input = DocumentImport.open(this, uri)) {
+                    if (name.toLowerCase(Locale.ROOT).endsWith(".zip"))
+                        workspace.archive(input);
+                    else
+                        workspace.document(name, input);
+                }
+                ImportWorkspace ready = workspace;
+                main.post(() -> {
+                    if (isDestroyed()) {
+                        try {
+                            ready.close();
+                        } catch (java.io.IOException ignored) {
+                        }
+                        return;
+                    }
+                    importing = ready;
+                    String[] names = ready.configurations();
+                    if (names.length == 1) {
+                        ready.choose(0);
+                        askPem();
+                    } else
+                        new AlertDialog.Builder(this)
+                            .setTitle("选择 VPN 配置")
+                            .setItems(names,
+                                      (dialog, index) -> {
+                                          ready.choose(index);
+                                          askPem();
+                                      })
+                            .setNegativeButton("取消", (dialog, which) -> closeImport())
+                            .setOnCancelListener(dialog -> closeImport())
+                            .show();
+                });
+            } catch (Exception error) {
+                if (workspace != null)
+                    try {
+                        workspace.close();
+                    } catch (java.io.IOException ignored) {
+                    }
+                importError(error);
+            }
+        });
+    }
+    private void askPem() {
+        new AlertDialog.Builder(this)
+            .setTitle("选择 users.pem")
+            .setMessage("选择客户端证书和私钥文件 users.pem。配置已包含证书时可以跳过。")
+            .setPositiveButton("选择 PEM", (d, w) -> pick(PEM, "*/*"))
+            .setNeutralButton("跳过", (d, w) -> attemptImport())
+            .setNegativeButton("取消", (d, w) -> closeImport())
+            .setOnCancelListener(d -> closeImport())
+            .show();
+    }
+    private void attemptImport() {
+        ImportWorkspace workspace = importing;
+        if (workspace == null)
             return;
         io.execute(() -> {
-            File ovpnFile = null, pemFile = null;
             try {
-                ovpnFile = DocumentImport.copy(this, config, DocumentImport.displayName(this, config));
-                if (pem != null)
-                    pemFile = DocumentImport.copy(this, pem, "users.pem");
-                String id = NativeBridge.importProfile(ovpnFile.getAbsolutePath(),
-                                                       pemFile == null ? "" : pemFile.getAbsolutePath());
+                String id = NativeBridge.importProfileFiles(
+                    workspace.configurationPath(), workspace.pemPath(), workspace.dependencyOptions(),
+                    workspace.dependencyPaths(), workspace.referenceRoot());
+                try {
+                    workspace.close();
+                } catch (java.io.IOException ignored) {
+                }
                 main.post(() -> {
+                    if (isDestroyed())
+                        return;
+                    importing = null;
+                    missingDependency = null;
+                    importBusy = false;
                     reloadProfiles(id);
                     message("配置已导入");
                 });
+            } catch (MissingDependencyException error) {
+                main.post(() -> {
+                    if (isDestroyed())
+                        return;
+                    missingDependency = error;
+                    String detail =
+                        "请选择配置引用的文件：\n" + error.reference + "\n\n依赖类型：" + error.option;
+                    if (error.option.equals("tls-auth") || error.option.equals("tls-crypt"))
+                        detail += "\n这是 TLS 认证密钥，需要选择配置包内对应的 .key 文件。";
+                    new AlertDialog.Builder(this)
+                        .setTitle("补齐依赖文件")
+                        .setMessage(detail)
+                        .setPositiveButton("选择文件", (d, w) -> pick(DEPENDENCY, "*/*"))
+                        .setNegativeButton("取消", (d, w) -> closeImport())
+                        .setOnCancelListener(d -> closeImport())
+                        .show();
+                });
             } catch (Exception error) {
-                main.post(() -> message(error.getMessage()));
-            } finally {
-                if (ovpnFile != null)
-                    ovpnFile.delete();
-                if (pemFile != null)
-                    pemFile.delete();
+                importError(error);
+            }
+        });
+    }
+    private void importFile(Uri uri, boolean dependency) {
+        ImportWorkspace workspace = importing;
+        MissingDependencyException requested = missingDependency;
+        if (workspace == null || dependency && requested == null) {
+            message("导入会话已结束，请重新选择配置");
+            return;
+        }
+        io.execute(() -> {
+            try (java.io.InputStream input = DocumentImport.open(this, uri)) {
+                if (dependency)
+                    workspace.dependency(requested.option, input);
+                else
+                    workspace.pem(input);
+                main.post(() -> {
+                    if (!isDestroyed())
+                        attemptImport();
+                });
+            } catch (Exception error) {
+                importError(error);
             }
         });
     }
@@ -538,24 +659,23 @@ public final class MainActivity extends Activity {
             }
             return;
         }
-        if (resultCode != RESULT_OK || data == null || data.getData() == null)
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+            if (requestCode == OVPN || requestCode == PEM || requestCode == DEPENDENCY)
+                closeImport();
             return;
+        }
         Uri uri = data.getData();
         if (requestCode == OVPN) {
-            if (!DocumentImport.displayName(this, uri).toLowerCase(Locale.ROOT).endsWith(".ovpn")) {
-                message("请选择 .ovpn 配置文件");
+            String name = DocumentImport.displayName(this, uri), lower = name.toLowerCase(Locale.ROOT);
+            if (!lower.endsWith(".ovpn") && !lower.endsWith(".zip")) {
+                message("请选择 .ovpn 配置或 .zip 配置包");
                 return;
             }
-            pendingOvpn = uri;
-            new AlertDialog.Builder(this)
-                .setTitle("选择 users.pem")
-                .setMessage("配置引用的证书文件也需要一并导入。")
-                .setPositiveButton("选择 PEM", (d, w) -> pick(PEM, "*/*"))
-                .setNeutralButton("配置已内嵌证书", (d, w) -> importFiles(null))
-                .setNegativeButton("取消", (d, w) -> pendingOvpn = null)
-                .show();
+            prepareImport(uri, name);
         } else if (requestCode == PEM)
-            importFiles(uri);
+            importFile(uri, false);
+        else if (requestCode == DEPENDENCY)
+            importFile(uri, true);
         else if (requestCode == QR)
             io.execute(() -> {
                 try {
@@ -669,18 +789,13 @@ public final class MainActivity extends Activity {
         super.onPause();
     }
     @Override
-    protected void onSaveInstanceState(Bundle out) {
-        super.onSaveInstanceState(out);
-        if (pendingOvpn != null)
-            out.putString("pendingOvpn", pendingOvpn.toString());
-    }
-    @Override
     protected void onDestroy() {
         connectionGeneration++;
         resumed = false;
         main.removeCallbacksAndMessages(null);
         if (bound)
             unbindService(connection);
+        closeImport();
         io.shutdown();
         super.onDestroy();
     }

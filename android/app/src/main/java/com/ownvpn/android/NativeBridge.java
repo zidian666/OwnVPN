@@ -37,7 +37,12 @@ final class NativeBridge {
     }
     private static native void init(String root);
     static native String[] profiles();
-    static native String importProfile(String ovpn, String pem);
+    static String importProfile(String ovpn, String pem) {
+        return importProfileFiles(ovpn, pem, new String[0], new String[0],
+                                  new java.io.File(ovpn).getParent());
+    }
+    static native String importProfileFiles(String ovpn, String pem, String[] options, String[] files,
+                                            String referenceRoot);
     static native void bindTotp(String profile, String username, String input);
     static native String totp(String profile, String username);
     static native String decodeQr(int[] pixels, int width, int height);

@@ -5,6 +5,7 @@
 #include "management_commands.h"
 #include "management_startup.h"
 #include "support/core_cases.h"
+#include "support/profile_import_cases.h"
 #include "ui_text.h"
 #include <iostream>
 #include <sstream>
@@ -32,6 +33,7 @@ void ProtocolTests() {
     ownvpn::testing::ProtocolCases(Check, [](auto action, const char* message) { Throws(action, message); });
 }
 void ProfileTests(const fs::path& root) {
+    ownvpn::testing::ProfileImportCases(root / "document-import", Check);
     auto source = root / L"source files";
     fs::create_directories(source);
     WriteFile(source / L"ca.crt", "dummy CA");

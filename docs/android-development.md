@@ -1,6 +1,6 @@
 # Android 开发与测试
 
-当前开发版为 `0.5.0-alpha.1`。已实现 Android 原生界面、JNI、VpnService、官方 OpenVPN 3 引擎、Android Keystore 安全存储、二维码导入和公共 C++ 核心复用。属于调试签名的开发版本。
+当前开发版为 `0.5.0-alpha.2`。已实现 Android 原生界面、JNI、VpnService、官方 OpenVPN 3 引擎、Android Keystore 安全存储、二维码导入和公共 C++ 核心复用。属于调试签名的开发版本。
 
 `src/platform/android/` 实现公共平台接口和 JNI 隧道适配，`android/` 提供原生界面和系统服务。Windows 的 OpenVPN 2.x 进程实现保持原样；两个平台共用配置校验、TOTP、DNS 缓存与重连时序。
 
@@ -12,9 +12,13 @@
 ./build-android.ps1 -Test -DeviceSerial <设备序列号>
 ```
 
-使用 Gradle 8.13、AGP 8.13.2、JDK 21、SDK 36、NDK 30；输出 `dist/OwnVPN-Android-0.5.0-alpha.1.apk`。当前 APK 包含 ARM64，最低 API 26；核心还验证了 x86_64 构建。Gradle 安装在本机 `D:\DevTools\Gradle`，缓存位于 `D:\DevTools\GradleCache`。其他宿主系统准备相同 SDK/NDK 与 Gradle 后可执行 `gradle -p android assembleDebug`。
+使用 Gradle 8.13、AGP 8.13.2、JDK 21、SDK 36、NDK 30；输出 `dist/OwnVPN-Android-0.5.0-alpha.2.apk`。当前 APK 包含 ARM64，最低 API 26；核心还验证了 x86_64 构建。Gradle 安装在本机 `D:\DevTools\Gradle`，缓存位于 `D:\DevTools\GradleCache`。其他宿主系统准备相同 SDK/NDK 与 Gradle 后可执行 `gradle -p android assembleDebug`。
 
 配置导入会复制到应用私有目录；密码和验证码绑定通过 Android Keystore 的 AES-GCM 密钥加密。默认勾选自动重连和 DNS 回退，自动重连需要自动验证码。关闭界面不结束 VPN；通知栏提供断开。认证失败和手动取消会停止重试。
+
+推荐直接导入邮件中的原始 ZIP 配置包，保留配置和依赖的相对目录；包内有多个 `.ovpn` 时先选择一个，再选择单独下载的 `users.pem`。也支持单独导入 `.ovpn`：Android 文件选择器不授予同目录其他文件的读取权限，程序会按配置引用逐项提示选择缺失的 `.key`、`.crt` 等文件。`users.pem` 仅补齐客户端证书和私钥，不能替代 TLS 认证密钥或 CA 证书。已内嵌所需证书的配置可跳过 PEM 选择。导入取消或结束后清理临时目录，不修改源文件。
+
+`0.5.0-alpha.2` 的导入修复已通过电脑端 22 项 Java 文件工作区检查（包括 ZIP 路径、文件上限与清理）和 Windows 5/5 回归；公共核心测试覆盖缺失依赖、显式选择、PEM 与 TLS 密钥区分、ZIP 目录结构和引用边界。新 APK 已编译；本次未操作手机，新的文件选择界面尚待真机验收。以下真机记录来自 `alpha.1`。
 
 Android 只接收指定的公司路由；不添加默认路由或两个 `/1` 半默认路由。DNS 服务器会添加对应的主机路由。配置使用 TUN，暂不支持 TAP、外部 PKI、需独立密码解锁的私钥，以及部分证书选项；失败时不会降低证书校验要求。
 
@@ -59,6 +63,12 @@ Android 适配会移除本地 `topology` 指令，交给 OpenVPN 3 接收服务�
 ```
 
 脚本使用 NDK 编译 `ownvpn_core` 和 `portable_core_tests`，输出到忽略提交的 `build-android-core-<ABI>`。最低目标为 API 26，使用静态 C++ 运行库。编译通过仅说明源码和链接符合该 Android 工具链，不能视为设备测试通过。
+
+只在开发电脑检查 Android 文件导入工作区，不连接手机：
+
+```powershell
+./tools/test_android_import.ps1
+```
 
 ## 真机运行公共核心测试
 

@@ -115,13 +115,39 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_com_ownvpn_android_NativeBridge_p
         return nullptr;
     }
 }
-extern "C" JNIEXPORT jstring JNICALL Java_com_ownvpn_android_NativeBridge_importProfile(JNIEnv* env, jclass,
-                                                                                        jstring ovpn,
-                                                                                        jstring pem) {
+extern "C" JNIEXPORT jstring JNICALL Java_com_ownvpn_android_NativeBridge_importProfileFiles(
+    JNIEnv* env, jclass, jstring ovpn, jstring pem, jobjectArray options, jobjectArray files,
+    jstring referenceRoot) {
     try {
+        if (!options || !files || env->GetArrayLength(options) != env->GetArrayLength(files) ||
+            env->GetArrayLength(options) > 9) {
+            throw std::runtime_error("Invalid dependency selection");
+        }
+        ProfileDependencyFiles selected;
+        for (jsize i = 0; i < env->GetArrayLength(options); ++i) {
+            auto op = static_cast<jstring>(env->GetObjectArrayElement(options, i));
+            auto path = static_cast<jstring>(env->GetObjectArrayElement(files, i));
+            if (!selected.emplace(a::Text(env, op), PathFromUtf8(a::Text(env, path))).second) {
+                throw std::runtime_error("Duplicate dependency selection");
+            }
+            env->DeleteLocalRef(op);
+            env->DeleteLocalRef(path);
+        }
         auto profile =
-            ProfileRepository().Import(PathFromUtf8(a::Text(env, ovpn)), PathFromUtf8(a::Text(env, pem)));
+            ProfileRepository().Import(PathFromUtf8(a::Text(env, ovpn)), PathFromUtf8(a::Text(env, pem)),
+                                       selected, PathFromUtf8(a::Text(env, referenceRoot)));
         return a::String(env, Utf8(profile.id));
+    } catch (const MissingProfileDependency& error) {
+        auto type = env->FindClass("com/ownvpn/android/MissingDependencyException");
+        auto constructor = env->GetMethodID(type, "<init>", "(Ljava/lang/String;Ljava/lang/String;)V");
+        auto op = a::String(env, error.option()), reference = a::String(env, error.reference());
+        auto exception = static_cast<jthrowable>(env->NewObject(type, constructor, op, reference));
+        env->Throw(exception);
+        env->DeleteLocalRef(exception);
+        env->DeleteLocalRef(op);
+        env->DeleteLocalRef(reference);
+        env->DeleteLocalRef(type);
+        return nullptr;
     } catch (const std::exception& error) {
         a::Throw(env, error);
         return nullptr;

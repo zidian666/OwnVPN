@@ -8,6 +8,8 @@ namespace {
 // This adapter is linked ONLY by portable_core_tests. It cannot access OS
 // credentials, perform DNS, or supply production cryptography.
 class TestCrypto final : public ICryptoProvider {
+    mutable uint64_t randomCall_ = 0;
+
   public:
     std::vector<unsigned char> Hmac(HashAlgorithm algorithm, std::span<const unsigned char> key,
                                     std::span<const unsigned char> message) const override {
@@ -24,9 +26,9 @@ class TestCrypto final : public ICryptoProvider {
         throw std::runtime_error("Production hashing is deliberately unavailable in test adapter");
     }
     void RandomBytes(std::span<unsigned char> output) const override {
-        unsigned char value = 0;
-        for (auto& byte : output) {
-            byte = value++;
+        auto value = ++randomCall_;
+        for (size_t i = 0; i < output.size(); ++i) {
+            output[i] = static_cast<unsigned char>(value >> ((i % 8) * 8));
         }
     }
 };

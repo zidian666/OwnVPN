@@ -4,7 +4,7 @@
 
 Windows 11 / x64 原生 C++ 桌面客户端。加载公司 `.ovpn`，使用用户名、密码和 6 位动态验证码连接公司内网。采用本机官方 OpenVPN 2.x 核心的管理接口，不依赖 OpenVPN GUI 的窗口自动化。0.2 版新增本机 TOTP 生成和二维码导入。
 
-Android 首个开发版为 `0.5.0-alpha.1`，在同一主干构建原生 Android 界面、VpnService 和官方 OpenVPN 3 客户端库，复用公共 C++ 核心。Windows 继续使用 0.4.0 的 OpenVPN 2.x 进程适配。Android 使用和验证范围见 [Android 开发与测试](docs/android-development.md)。
+Android 当前开发版为 `0.5.0-alpha.2`，在同一主干构建原生 Android 界面、VpnService 和官方 OpenVPN 3 客户端库，复用公共 C++ 核心。支持 ZIP 配置包导入和缺失依赖逐项选择。Windows 继续使用 0.4.0 的 OpenVPN 2.x 进程适配。Android 使用和验证范围见 [Android 开发与测试](docs/android-development.md)。
 
 0.2.5 使用绿色底、白色字母 O 的应用图标，嵌入 16–256 像素多尺寸图标，同步用于程序文件、窗口、任务栏和主界面标识。矢量源文件为 `resources/app-icon.svg`，开发时可用 `tools/generate_app_icon.py`（Pillow）重新生成 ICO；运行程序无需 Python。
 

@@ -192,7 +192,9 @@ struct ParsedProfile {
     std::string config;
     std::map<std::string, fs::path> files;
 };
-static ParsedProfile ParseProfile(const fs::path& source, const fs::path& dest, const fs::path& fallbackPem) {
+static ParsedProfile ParseProfile(const fs::path& source, const fs::path& dest, const fs::path& fallbackPem,
+                                  const ProfileDependencyFiles& selectedFiles,
+                                  const fs::path& referenceRoot) {
     auto text = ReadFile(source);
     if (text.starts_with("\xef\xbb\xbf")) {
         text.erase(0, 3);
@@ -260,15 +262,24 @@ static ParsedProfile ParseProfile(const fs::path& source, const fs::path& dest, 
             if (!seenFiles.insert(op).second) {
                 throw std::runtime_error("Duplicate certificate/key directive");
             }
-            auto src = PathFromUtf8(t[1]);
-            if (src.is_relative()) {
+            auto selected = selectedFiles.find(op);
+            auto src = selected == selectedFiles.end() ? PathFromUtf8(t[1]) : selected->second;
+            if (selected == selectedFiles.end() && src.is_relative()) {
                 src = source.parent_path() / src;
             }
-            if (!fs::is_regular_file(src) && (op == "cert" || op == "key") && !fallbackPem.empty()) {
-                src = fallbackPem;
+            bool accessible = fs::is_regular_file(src);
+            if (selected == selectedFiles.end() && !referenceRoot.empty()) {
+                auto relative =
+                    fs::weakly_canonical(src).lexically_relative(fs::weakly_canonical(referenceRoot));
+                accessible = accessible && !relative.empty() && *relative.begin() != "..";
             }
-            if (!fs::is_regular_file(src)) {
-                throw std::runtime_error("Missing dependency: " + t[1]);
+            if (selected == selectedFiles.end() && !accessible && (op == "cert" || op == "key") &&
+                !fallbackPem.empty()) {
+                src = fallbackPem;
+                accessible = fs::is_regular_file(src);
+            }
+            if (!accessible) {
+                throw MissingProfileDependency(op, t[1]);
             }
             // Generated dependency names cannot escape the private profile folder.
             auto dst = dest / PathFromUtf8(op + ".bin");
@@ -326,12 +337,14 @@ std::vector<Profile> ProfileRepository::List() const {
     std::sort(profiles.begin(), profiles.end(), [](const auto& a, const auto& b) { return a.name < b.name; });
     return profiles;
 }
-Profile ProfileRepository::Import(const fs::path& source, const fs::path& pem) {
+Profile ProfileRepository::Import(const fs::path& source, const fs::path& pem,
+                                  const ProfileDependencyFiles& selectedFiles,
+                                  const fs::path& referenceRoot) {
     PrivateDirectory(root_.parent_path());
     PrivateDirectory(root_);
     auto id = Wide(RandomHex());
     auto dest = root_ / id;
-    auto parsed = ParseProfile(source, dest, pem);
+    auto parsed = ParseProfile(source, dest, pem, selectedFiles, referenceRoot);
     PrivateDirectory(dest);
     try {
         for (const auto& [op, src] : parsed.files) {

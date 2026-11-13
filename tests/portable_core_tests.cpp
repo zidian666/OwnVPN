@@ -5,6 +5,7 @@
 #include "protocol.h"
 #include "reconnect_policy.h"
 #include "support/core_cases.h"
+#include "support/profile_import_cases.h"
 #include "support/test_platform.h"
 #include "totp.h"
 #include "ui_text.h"
@@ -43,6 +44,7 @@ int main() {
     try {
         fs::create_directories(root);
         ProtocolTests();
+        ownvpn::testing::ProfileImportCases(root / "profile-import", Check);
         Check(Base64("") == "" && Base64Decode("") == "", "empty Base64 roundtrip");
         Check(Base64("f") == "Zg==" && Base64("fo") == "Zm8=" && Base64("foo") == "Zm9v",
               "RFC4648 encoding vectors");
