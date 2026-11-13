@@ -41,6 +41,8 @@ build-macos-$(uname -m)/src/platform/macos/macos_platform_tests --keychain
 
 GitHub Actions 的 `macOS` 流程覆盖 Apple Silicon 和 Intel 构建、离线测试及构建产物保存；没有公司配置、账号、VPN 授权或实连任务。流程结果以对应提交的实际运行记录为准。Windows 本机只验证了脚本语法、CMake 平台隔离及原有 5/5 回归，不能代替 Mac 编译和运行。
 
+2026-11-13，源码提交 `0c71acf` 在 [macOS 构建记录](https://github.com/zidian666/OwnVPN/actions/runs/43380070028) 中通过 Apple Silicon 和 Intel 两个任务：均完成完整 App 编译、3/3 组离线测试、ad-hoc 签名校验及产物上传。下载到 Windows 的两个 ZIP 已核对 SHA-256、Mach-O 架构、Bundle ID 和许可证。Windows 回归为 5/5，修改后的公共核心也通过 Android ARM64 NDK 编译。尚未在用户的 Mac 上启动界面、执行可选 Keychain 写入测试、验证 macOS 15 运行或建立 VPN 隧道。
+
 ## 仍需实现和验收
 
 连接按钮目前禁用，防止假成功。下一阶段是 [macOS 连接后台](macos-porting.md)：权限服务、官方 OpenVPN 进程、受限 IPC、管理协议、DNS 配置恢复、自动重连和流量状态。随后在真实 Mac 上验证布局、Keychain 权限、文件选择、菜单栏及多屏，再进行公司 VPN 实连。
