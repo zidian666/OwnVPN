@@ -1,0 +1,28 @@
+OwnVPN Android 0.5.0-alpha.1
+
+OpenVPN 3 Core 3.11.8, commit 4f3bdef73245d4ee9e8216c5d65baccc9568f6ef
+Copyright OpenVPN Inc. and contributors. Used under Mozilla Public License 2.0.
+Original source: https://github.com/OpenVPN/openvpn3/tree/4f3bdef73245d4ee9e8216c5d65baccc9568f6ef
+One compatibility change is backported in openvpn/mbedtls/ssl/sslctx.hpp from
+official OpenVPN commit ee481a02cb6ab946ec388efac7ca13d39305ff7b. The exact
+change is reproduced by cmake/OpenVPNMbedTLSCompatibility.cmake in OwnVPN.
+It explicitly initializes Mbed TLS's hostname API for OpenVPN PKI; CA, server
+certificate role and configured verify-x509-name verification remain enabled.
+
+Mbed TLS 3.6.7 (Apache-2.0 option), with its pinned upstream framework submodule.
+Asio 1.39.0 (Boost Software License 1.0).
+fmt 12.2.1 (MIT).
+LZ4 1.11.1 library (BSD-2-Clause).
+xxHash 0.8.4 library (BSD-2-Clause).
+ZXing-C++ 3.1.1 (Apache-2.0, embedded libzueci BSD-3-Clause).
+
+The APK contains the upstream license texts in assets/licenses. Other
+dependency sources are unmodified; CMake pins each official source archive by
+SHA-256. Exact download URLs, versions and hashes are available in
+cmake/AndroidDependencies.cmake and cmake/ZXing.cmake in the corresponding
+OwnVPN source: https://github.com/zidian666/OwnVPN
+
+Windows continues to use the separately installed OpenVPN 2.x executable.
+The Android APK embeds the OpenVPN 3 client library and Mbed TLS instead.
+
+This development APK uses a debug signing key and is not a production release.

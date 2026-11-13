@@ -1,6 +1,26 @@
 # Android 开发与测试
 
-当前仓库已拆出公共 C++20 核心。Android 界面、VpnService、VPN 引擎和安全存储适配尚未实现，公共核心测试程序不是 VPN 客户端，也不是 APK。
+当前开发版为 `0.5.0-alpha.1`。已实现 Android 原生界面、JNI、VpnService、官方 OpenVPN 3 引擎、Android Keystore 安全存储、二维码导入和公共 C++ 核心复用。属于调试签名的开发版本。
+
+`src/platform/android/` 实现公共平台接口和 JNI 隧道适配，`android/` 提供原生界面和系统服务。Windows 的 OpenVPN 2.x 进程实现保持原样；两个平台共用配置校验、TOTP、DNS 缓存与重连时序。
+
+## 构建 APK
+
+```powershell
+./build-android.ps1
+./build-android.ps1 -Install -DeviceSerial <设备序列号>
+./build-android.ps1 -Test -DeviceSerial <设备序列号>
+```
+
+使用 Gradle 8.13、AGP 8.13.2、JDK 21、SDK 36、NDK 30；输出 `dist/OwnVPN-Android-0.5.0-alpha.1.apk`。当前 APK 包含 ARM64，最低 API 26；核心还验证了 x86_64 构建。Gradle 安装在本机 `D:\DevTools\Gradle`，缓存位于 `D:\DevTools\GradleCache`。其他宿主系统准备相同 SDK/NDK 与 Gradle 后可执行 `gradle -p android assembleDebug`。
+
+配置导入会复制到应用私有目录；密码和验证码绑定通过 Android Keystore 的 AES-GCM 密钥加密。默认勾选自动重连和 DNS 回退，自动重连需要自动验证码。关闭界面不结束 VPN；通知栏提供断开。认证失败和手动取消会停止重试。
+
+Android 只接收指定的公司路由；不添加默认路由或两个 `/1` 半默认路由。DNS 服务器会添加对应的主机路由。配置使用 TUN，暂不支持 TAP、外部 PKI、需独立密码解锁的私钥，以及部分证书选项；失败时不会降低证书校验要求。
+
+系统首次 VPN 授权及通知权限由用户在手机上确认。小米设备可能还需要在开发者选项允许 USB 安装。
+
+普通卸载会移除私有配置和登录资料。覆盖安装保留应用数据；本版关闭系统备份，暂不实现备份／恢复功能。
 
 ## Windows 开发机
 
@@ -19,7 +39,15 @@
 
 用户环境变量 `ANDROID_HOME` 指向 SDK；`ANDROID_USER_HOME` 和 `ANDROID_AVD_HOME` 分别指向 `D:\DevTools\Android\User`、`D:\DevTools\Android\Avd`。更新环境变量后重新打开终端；现有 Codex 进程可能仍使用旧环境，可显式传入 `-SdkRoot`。
 
-2026-11-13 的环境验证结果：SDK 安装包通过官方校验值核对，sdkmanager 完成安装；adb、aapt2 可启动，模拟器报告 WHPX 可用。ARM64 与 x86_64 的公共核心及测试程序均编译、链接成功；Windows 公共核心检查 2/2 通过。当前未下载模拟器系统镜像，adb 未发现手机，尚未在 Android 系统执行测试，也没有完整 Android APK。
+2026-11-13 的验证：小米 15 / Android 16 / ARM64 上运行公共核心 90 项检查；客户端 22 项检查涵盖真实加密提供者的 18 组 RFC6238 向量、Keystore、二维码、重连时序、连续 8 次启动前取消、两份配置的完整环回启动和界面启动。已通过真实公司 VPN 认证；Android 路由没有默认接管，指定内网主机经 TUN 的 ICMP 检查 3/3 成功。一个历史站点的 TCP 端口仍不可达，不据此声称该站点可用。Windows 原有回归 5/5 通过。系统镜像未下载，模拟器只验证了 WHPX 可用。
+
+同时运行电脑和手机的同账号会话时，观察到两端反复重连；隔离为手机单端后连接保持稳定。此现象提示服务端可能限制并发，尚未确认服务器的实际策略。实用中建议先只保留一个终端连接。
+
+常规测试不提交真实 VPN 认证，界面按正常流程读取已保存的配置和登录资料。完整启动测试使用环回服务器覆盖和公开合成凭据，不连接配置里的真实服务器。测试结果不输出密码、验证码或密钥。实连探测使用独立 `probe` APK 内的 `ExternalVpnProbe`，从参数接收用户指定的内网目标，检查 Android VPN 网络、目标路由、默认路由、端口可达性与短时稳定性；运行在探测包自己的进程，结束后保留客户端连接。用户确认账号资料迁移后，测试 APK 可用临时 RSA-OAEP 公钥与 AES-GCM 加密信封导入登录资料；临时密钥和密文导入后删除，此入口不在主 APK 中。
+
+Android 适配会移除本地 `topology` 指令，交给 OpenVPN 3 接收服务器下发值；建立 TUN 时校验它与原配置要求一致，不匹配即停止。启动阶段的永久配置错误会报告诊断并停止重试。为兼容新版 Mbed TLS，固定的 OpenVPN 3.11.8 回移了官方提交 `ee481a02cb6ab946ec388efac7ca13d39305ff7b` 的 hostname 初始化修复，补丁位于 `cmake/OpenVPNMbedTLSCompatibility.cmake`；未启用弱证书验证兼容宏，保留 CA、证书角色和 `verify-x509-name` 检查。
+
+第三方源码来自固定的官方归档，SHA-256 位于 `cmake/AndroidDependencies.cmake` 和 `cmake/ZXing.cmake`；上游许可随 APK 打包。点击界面底部版本号可查看许可，详见 [第三方组件](android-third-party-notices.txt)。
 
 ## 公共核心编译检查
 

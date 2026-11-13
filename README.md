@@ -4,11 +4,13 @@
 
 Windows 11 / x64 原生 C++ 桌面客户端。加载公司 `.ovpn`，使用用户名、密码和 6 位动态验证码连接公司内网。采用本机官方 OpenVPN 2.x 核心的管理接口，不依赖 OpenVPN GUI 的窗口自动化。0.2 版新增本机 TOTP 生成和二维码导入。
 
+Android 首个开发版为 `0.5.0-alpha.1`，在同一主干构建原生 Android 界面、VpnService 和官方 OpenVPN 3 客户端库，复用公共 C++ 核心。Windows 继续使用 0.4.0 的 OpenVPN 2.x 进程适配。Android 使用和验证范围见 [Android 开发与测试](docs/android-development.md)。
+
 0.2.5 使用绿色底、白色字母 O 的应用图标，嵌入 16–256 像素多尺寸图标，同步用于程序文件、窗口、任务栏和主界面标识。矢量源文件为 `resources/app-icon.svg`，开发时可用 `tools/generate_app_icon.py`（Pillow）重新生成 ICO；运行程序无需 Python。
 
 ## 使用
 
-0.4.0 为同一主干的多平台构建拆分公共核心和 Windows 适配。验证码、配置、协议、重连、DNS 缓存等逻辑位于 `src/core/`；Win32 界面、UAC/IPC、官方核心进程及 Windows 加密/凭据/网络实现位于 `src/platform/windows/`。新增平台服务和连接后端接口，Windows 保持原有存储格式及连接流程。支持独立构建公共核心；完整 macOS/Android 应用尚未实现。详情见 [多平台构建](docs/multiplatform-build.md)。
+0.4.0 为同一主干的多平台构建拆分公共核心和 Windows 适配。验证码、配置、协议、重连、DNS 缓存等逻辑位于 `src/core/`；Win32 界面、UAC/IPC、官方核心进程及 Windows 加密/凭据/网络实现位于 `src/platform/windows/`。新增平台服务和连接后端接口，Windows 保持原有存储格式及连接流程。现已增加 Android 开发版；macOS 应用尚未实现。详情见 [多平台构建](docs/multiplatform-build.md)。
 
 0.3.9 将顶部连接状态文字从 14 磅增大到 18 磅，并与左侧图标垂直居中对齐；右侧可复制 IP 同步对齐，状态说明下移，避免遮挡。
 

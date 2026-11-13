@@ -19,4 +19,13 @@ __pycache__/
 dns-cache.txt
 dns-fallback.enabled
 auto-reconnect.enabled
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/probe/build/
+/android/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
 

@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <application android:label="OwnVPN test probe" android:allowBackup="false" android:networkSecurityConfig="@xml/probe_network_security" />
+    <instrumentation android:name="com.ownvpn.android.ExternalVpnProbe" android:targetPackage="com.ownvpn.android.probe" android:label="OwnVPN connection probe" />
+</manifest>

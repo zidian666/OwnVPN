@@ -1,0 +1,6 @@
+<resources>
+    <item name="connect" type="id" />
+    <item name="username" type="id" />
+    <item name="password" type="id" />
+    <item name="otp" type="id" />
+</resources>

@@ -17,17 +17,17 @@ import zipfile
 
 
 ROOT_FILES = (
-    ".clang-format", ".gitignore", ".gitattributes", "CMakeLists.txt", "build.ps1", "README.md",
+    ".clang-format", ".gitignore", ".gitattributes", "CMakeLists.txt", "build.ps1", "build-android.ps1", "README.md",
     "THIRD_PARTY_NOTICES.txt", "START_HERE_MAC.md",
 )
-SOURCE_ROOTS = ("src", "cmake", "docs", "resources", "tests", "tools")
-TEXT_SUFFIXES = {".cpp", ".h", ".cmake", ".md", ".txt", ".py", ".ps1", ".rc", ".manifest", ".specs", ".svg"}
+SOURCE_ROOTS = ("src", "cmake", "docs", "resources", "tests", "tools", "android")
+TEXT_SUFFIXES = {".cpp", ".h", ".cmake", ".md", ".txt", ".py", ".ps1", ".rc", ".manifest", ".specs", ".svg", ".java", ".xml", ".gradle", ".properties"}
 PUBLIC_IMAGES = {
     "resources/app.ico", "resources/app-icon.png", "resources/app-connected.ico", "resources/app-icon-connected.png",
     "tests/fixtures/totp-standard.png", "tests/fixtures/totp-rotated.png",
     "tests/fixtures/not-totp.png", "tests/fixtures/multiple-qr.png", "tests/fixtures/blank.png",
 }
-FORBIDDEN = {".pem", ".key", ".crt", ".ovpn", ".p12", ".pfx", ".p8", ".der", ".log", ".exe", ".dll", ".zip", ".db", ".sqlite"}
+FORBIDDEN = {".pem", ".key", ".crt", ".ovpn", ".p12", ".pfx", ".p8", ".der", ".log", ".exe", ".dll", ".zip", ".db", ".sqlite", ".apk", ".aab", ".jks", ".keystore", ".so", ".a"}
 PRIVATE_KEY = re.compile(rb"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----")
 
 
@@ -38,7 +38,11 @@ def digest(data: bytes) -> str:
 def collect(root: Path) -> dict[str, bytes]:
     paths = [root / name for name in ROOT_FILES]
     for directory in SOURCE_ROOTS:
-        paths.extend(path for path in (root / directory).rglob("*") if path.is_file())
+        for path in (root / directory).rglob("*"):
+            if directory == "android" and (any(part in {"build", ".gradle", ".cxx"} for part in path.relative_to(root / directory).parts) or path.name == "local.properties"):
+                continue
+            if path.is_file():
+                paths.append(path)
     result = {}
     for path in sorted(paths):
         if "__pycache__" in path.parts or path.suffix.lower() in {".pyc", ".pyo"}:
